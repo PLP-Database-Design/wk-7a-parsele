@@ -1,42 +1,35 @@
--- Question 1: Achieving 1NF
--- Split the Products column into individual rows
-CREATE TABLE ProductDetail_1NF AS
-SELECT 
-  OrderID,
-  CustomerName,
-  TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(Products, ',', numbers.n), ',', -1)) AS Product
-FROM ProductDetail
-CROSS JOIN (
-  SELECT 1 AS n UNION ALL
-  SELECT 2 UNION ALL
-  SELECT 3 UNION ALL
-  SELECT 4
-) numbers
-WHERE numbers.n <= LENGTH(Products) - LENGTH(REPLACE(Products, ',', '')) + 1;
+-- Achieving 1NF by splitting the Products into individual rows
+SELECT OrderID, CustomerName, 'Laptop' AS Product FROM ProductDetail WHERE Products LIKE '%Laptop%' 
+UNION
+SELECT OrderID, CustomerName, 'Mouse' AS Product FROM ProductDetail WHERE Products LIKE '%Mouse%'
+UNION
+SELECT OrderID, CustomerName, 'Tablet' AS Product FROM ProductDetail WHERE Products LIKE '%Tablet%'
+UNION
+SELECT OrderID, CustomerName, 'Keyboard' AS Product FROM ProductDetail WHERE Products LIKE '%Keyboard%'
+UNION
+SELECT OrderID, CustomerName, 'Phone' AS Product FROM ProductDetail WHERE Products LIKE '%Phone%';
 
--- Question 2: Achieving 2NF
--- Split the table to eliminate partial dependencies
--- Step 1: Create Orders table
+
+
+-- Creating a table for Orders to store OrderID and CustomerName
 CREATE TABLE Orders (
-  OrderID INT PRIMARY KEY,
-  CustomerName VARCHAR(255)
+    OrderID INT PRIMARY KEY,
+    CustomerName VARCHAR(255)
 );
 
--- Step 2: Create OrderProducts table
-CREATE TABLE OrderProducts (
-  OrderID INT,
-  Product VARCHAR(255),
-  Quantity INT,
-  PRIMARY KEY (OrderID, Product),
-  FOREIGN KEY (OrderID) REFERENCES Orders(OrderID)
-);
-
--- Step 3: Populate Orders table
+-- Insert data into the Orders table
 INSERT INTO Orders (OrderID, CustomerName)
-SELECT DISTINCT OrderID, CustomerName
-FROM OrderDetails;
+SELECT DISTINCT OrderID, CustomerName FROM OrderDetails;
 
--- Step 4: Populate OrderProducts table
-INSERT INTO OrderProducts (OrderID, Product, Quantity)
-SELECT OrderID, Product, Quantity
-FROM OrderDetails;
+-- Creating the normalized OrderDetails table
+CREATE TABLE OrderDetails (
+    OrderID INT,
+    Product VARCHAR(255),
+    Quantity INT,
+    PRIMARY KEY (OrderID, Product),
+    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID)
+);
+
+-- Insert data into the OrderDetails table
+INSERT INTO OrderDetails (OrderID, Product, Quantity)
+SELECT OrderID, Product, Quantity FROM OrderDetails;
